@@ -4,7 +4,7 @@ PhishScope is a simple web app that scans email attachments using the VirusTotal
 
 ## Features
 
-- Upload any file to check against VirusTotal's threat database
+- Upload any file to check againsts VirusTotal's threat database
 - Instant report if known
 - Easy to use web interface
 
