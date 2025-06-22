@@ -2,7 +2,7 @@ import requests
 import hashlib
 import os
 
-VT_API_KEY = "a7a7576fc86eb99b25c11d72e3b9337467e89264a5b561d3f8db2b48657c5d0b"  # Replace with your actual VirusTotal API key
+VT_API_KEY = "api_key"  # Replace with your actual VirusTotal API key
 
 def get_file_hash(file_path):
     with open(file_path, "rb") as f:
