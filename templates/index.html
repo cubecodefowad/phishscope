@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PhishScope: Scan Email Attachment</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    input, button {
+      margin: 10px 0;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f4f4f4;
+      border-radius: 6px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    a {
+      color: blue;
+    }
+  </style>
+</head>
+<body>
+  <h2>📎 PhishScope: Scan Email Attachment</h2>
+  <p>Upload a file to check if it's malicious or suspicious.</p>
+  <input type="file" id="fileInput"><br>
+  <button onclick="uploadFile()">Scan</button>
+
+  <div class="result" id="scanResult"></div>
+
+  <script>
+    async function uploadFile() {
+      const fileInput = document.getElementById("fileInput");
+      if (!fileInput.files.length) return alert("Please select a file.");
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      document.getElementById("scanResult").innerText = "⏳ Uploading and scanning...";
+
+      const res = await fetch("/scan-attachment", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (data.malicious !== undefined) {
+        displayResult(data);
+      } else if (data.analysis_id) {
+        document.getElementById("scanResult").innerText = "⏳ File uploaded. Waiting for VirusTotal analysis...";
+        pollForResult(data.analysis_id, data.file, data.link);
+      } else {
+        document.getElementById("scanResult").innerText = "❌ Error: " + (data.error || "Unknown");
+      }
+    }
+
+    function displayResult(data) {
+      let output = `📄 File: ${data.file}\n`;
+      output += `🚨 Malicious: ${data.malicious}\n⚠️ Suspicious: ${data.suspicious}\n💬 ${data.explanation}\n🔗 View report: ${data.link}`;
+      document.getElementById("scanResult").innerText = output;
+    }
+
+    async function pollForResult(analysis_id, fileName, link) {
+      let attempts = 0;
+      const maxAttempts = 10;
+      const delay = 5000;
+
+      while (attempts < maxAttempts) {
+        const res = await fetch(`/check-status/${analysis_id}`);
+        const result = await res.json();
+
+        if (result.done) {
+          displayResult({
+            file: fileName,
+            malicious: result.malicious,
+            suspicious: result.suspicious,
+            explanation: result.explanation,
+            link: link
+          });
+          return;
+        }
+
+        document.getElementById("scanResult").innerText = `⏳ Still analyzing... (${attempts + 1}/${maxAttempts})`;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        attempts++;
+      }
+
+      document.getElementById("scanResult").innerText =
+        `⚠️ Analysis not completed after ${maxAttempts} attempts. Try refreshing later.\n🔗 ${link}`;
+    }
+  </script>
+</body>
+</html>
